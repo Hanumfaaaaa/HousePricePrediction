@@ -81,7 +81,7 @@ if st.button("Prediksi Harga Rumah"):
 
     # Lakukan prediksi
     try:
-        prediction = model.predict(input_data)[0]
+        prediction = model.predict(input_data)[0].item()
         st.success(f"### Harga Rumah yang Diprediksi: ${prediction:,.2f}") # Format sebagai mata uang
         st.balloons() # Efek balon saat prediksi berhasil
     except Exception as e:
