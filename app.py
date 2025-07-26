@@ -1,38 +1,59 @@
 import streamlit as st
 import pandas as pd
-from sklearn.linear_model import LinearRegression
+import joblib # Atau pickle, tergantung bagaimana Anda menyimpan model
 
-st.title("Prediksi Harga Rumah 🏠")
+# --- Konfigurasi Halaman Streamlit ---
+st.set_page_config(
+    page_title="Prediksi Harga Rumah KC",
+    page_icon="🏠",
+    layout="centered"
+)
 
-# Load data
-df = pd.read_csv("kc_house_data.csv")
+# --- Judul Aplikasi ---
+st.title("🏡 Prediksi Harga Rumah di King County")
+st.write("Aplikasi ini memprediksi harga rumah berdasarkan beberapa fitur kunci.")
 
-# Pastikan kolom-kolom ada
-fitur = ['bedrooms', 'bathrooms', 'floors', 'grade', 'sqft_living',
-         'sqft_above', 'sqft_basement', 'view', 'waterfront']
-df = df[fitur + ['price']].dropna()
+# --- Muat Model ---
+# Pastikan file 'kc_house_data.pkl' berada di direktori yang sama dengan 'app.py'
+# di dalam repositori GitHub Anda.
+try:
+    model = joblib.load('kc_house_data.pkl')
+    st.success("Model berhasil dimuat!")
+except FileNotFoundError:
+    st.error("Error: File model 'kc_house_data.pkl' tidak ditemukan. Pastikan file ada di repositori GitHub Anda.")
+    st.stop() # Hentikan eksekusi jika model tidak ditemukan
+except Exception as e:
+    st.error(f"Error saat memuat model: {e}")
+    st.stop()
 
-# Model
-model = LinearRegression()
-X = df[fitur]
-y = df['price']
-model.fit(X, y)
+# --- Input Pengguna (Contoh Fitur) ---
+st.header("Masukkan Fitur Rumah")
 
-# Input pengguna
-st.sidebar.header("Masukkan data rumah:")
-bedrooms = st.sidebar.slider("Bedrooms", 1, 10, 3)
-bathrooms = st.sidebar.slider("Bathrooms", 1, 8, 2)
-floors = st.sidebar.slider("Floors", 1, 3, 1)
-grade = st.sidebar.slider("Grade", 1, 13, 7)
-sqft_living = st.sidebar.slider("Sqft Living", 500, 10000, 2000)
-sqft_above = st.sidebar.slider("Sqft Above", 500, 10000, 1500)
-sqft_basement = st.sidebar.slider("Sqft Basement", 0, 5000, 500)
-view = st.sidebar.slider("View", 0, 4, 0)
-waterfront = st.sidebar.selectbox("Waterfront (1=Ya, 0=Tidak)", [0, 1])
+# Contoh fitur: square footage, number of bedrooms, number of bathrooms
+# Sesuaikan ini dengan fitur sebenarnya yang digunakan model Anda!
+sqft_living = st.slider("Luas Hidup (sqft)", min_value=500, max_value=8000, value=2000, step=50)
+bedrooms = st.slider("Jumlah Kamar Tidur", min_value=1, max_value=10, value=3, step=1)
+bathrooms = st.slider("Jumlah Kamar Mandi", min_value=0.5, max_value=8.0, value=2.5, step=0.5)
+# Anda bisa menambahkan lebih banyak input sesuai fitur model Anda (e.g., year_built, grade, view, dll.)
+# Contoh:
+# year_built = st.number_input("Tahun Dibangun", min_value=1900, max_value=2025, value=2000)
 
-# Prediksi
-input_data = [[bedrooms, bathrooms, floors, grade, sqft_living,
-               sqft_above, sqft_basement, view, waterfront]]
 
-prediksi = model.predict(input_data)[0]
-st.success(f"💰 Estimasi harga rumah: ${prediksi:,.0f}")
+# --- Tombol Prediksi ---
+if st.button("Prediksi Harga"):
+    # Buat DataFrame dari input pengguna
+    # Pastikan nama kolom sesuai dengan yang diharapkan oleh model Anda!
+    input_data = pd.DataFrame([[sqft_living, bedrooms, bathrooms]],
+                              columns=['sqft_living', 'bedrooms', 'bathrooms']) # Ganti dengan nama fitur model Anda
+
+    # Lakukan prediksi
+    try:
+        prediction = model.predict(input_data)[0]
+        st.subheader("Hasil Prediksi Harga Rumah:")
+        st.success(f"Harga Rumah yang Diprediksi: ${prediction:,.2f}") # Format sebagai mata uang
+    except Exception as e:
+        st.error(f"Terjadi kesalahan saat melakukan prediksi: {e}")
+        st.write("Pastikan input data dan format fitur sesuai dengan yang diharapkan model Anda.")
+
+st.markdown("---")
+st.markdown("Dibuat oleh Data Scientist Anda")
